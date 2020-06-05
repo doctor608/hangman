@@ -3,40 +3,78 @@
  */
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #define LIVES          6
-#define EMPTY_LETTER '_'
+#define LOCKED_LETTER '_'
 #define PROMPT "GUESS: "
 
-void print_rules(void);
 const char* get_random_word(void);
-void draw_hangman(int lives);
-void draw_word_repr(const char* word_repr);
 char get_user_guess(const char* prompt);
-void init_word_repr(char* word_repr, int size, int val);
+
+void print_rules(void);
+void print_hangman(int lives);
+
+void unlock_letter(const char* word, char* unlocked_letters, char letter);
+void init_unlocked_letters(char* unlocked_letters, int size, int val);
+void print_unlocked_letters(const char* unlocked_letters);
+
+void append(char* dest, int n, char val);
+void print_misses(const char* misses);
 
 int main(void)
 {
     int lives = LIVES;
+    char misses[LIVES + 1] = {0};
     const char* word = get_random_word();
 
-    char word_repr[strlen(word) + 1];
-    init_word_repr(word_repr, sizeof(word_repr) - 1, EMPTY_LETTER);
+    char unlocked_letters[strlen(word) + 1];
+    init_unlocked_letters(unlocked_letters, sizeof(unlocked_letters) - 1, LOCKED_LETTER);
 
     print_rules();
 
-    int ch;
+    int letter;
+    bool won, lost;
+
+    won = lost = false;
     for (;;) {
-        draw_hangman(lives);
-        draw_word_repr(word_repr);
-        ch = get_user_guess(PROMPT);
-        printf("ch is %c\n", ch);
-        getchar();
+        system("clear");
+
+        print_hangman(lives);
+        print_misses(misses);
+        print_unlocked_letters(unlocked_letters);
+
+        letter = get_user_guess(PROMPT);
+        if (strchr(word, letter)) {
+            unlock_letter(word, unlocked_letters, letter);
+            if (!strchr(unlocked_letters, LOCKED_LETTER)) {
+                won = true;
+                break;
+            }
+        } else {
+            --lives;
+            append(misses, LIVES, letter);
+            if (lives == 0) {
+                lost = true;
+                break;
+            }
+        }
     }
+
+    system("clear");
+
+    if (won)
+        printf("%s\n", "YOU WON");
+    else
+        printf("%s\n", "YOU LOST");
+
+    print_hangman(lives);
+    print_misses(misses);
+    print_unlocked_letters(unlocked_letters);
 
     return 0;
 }
@@ -53,10 +91,10 @@ char get_user_guess(const char* prompt)
     return EOF;
 }
 
-void init_word_repr(char* word_repr, int size, int val)
+void init_unlocked_letters(char* unlocked_letters, int size, int val)
 {
-    memset(word_repr, val, size);
-    word_repr[size] = '\0';
+    memset(unlocked_letters, val, size);
+    unlocked_letters[size] = '\0';
 }
 
 void print_rules(void)
@@ -84,23 +122,23 @@ const char* get_random_word(void)
         "quarantine",
         "queue",
         "zebra",
+        "penguin",
     };
 
     int rand_pos = rand() % (sizeof(words) / sizeof(words[1]));
     return words[rand_pos];
 }
 
-void draw_word_repr(const char* word_repr)
+void print_unlocked_letters(const char* unlocked_letters)
 {
     printf("\n%s", "WORD: ");
-    for (; *word_repr; ++word_repr)
-        printf("%c ", *word_repr);
+    for (; *unlocked_letters; ++unlocked_letters)
+        printf("%c ", *unlocked_letters);
     puts("");
 }
 
-void draw_hangman(int lives)
+void print_hangman(int lives)
 {
-    system("clear");
     switch (lives) {
     case 0:
         puts("|-----");
@@ -151,5 +189,32 @@ void draw_hangman(int lives)
         puts("|     ");
         puts("|     ");
         break;
+    }
+}
+
+void unlock_letter(const char* word, char* unlocked_letters, char letter)
+{
+    for (int i = 0; word[i] != '\0'; ++i) {
+        if (letter == word[i]) {
+            unlocked_letters[i] = letter;
+        }
+    }
+}
+
+void append(char* dest, int n, char val)
+{
+    for (int i = 0; i < n; ++i) {
+        if (!dest[i]) {
+            dest[i] = val;
+            return;
+        }
+    }
+}
+
+void print_misses(const char* misses)
+{
+    printf("MISSES: ");
+    for (; *misses; ++misses) {
+        printf("%c ", *misses);
     }
 }
