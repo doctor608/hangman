@@ -14,7 +14,7 @@
 #define PROMPT "GUESS: "
 
 const char* get_random_word(void);
-char get_user_guess(const char* prompt);
+char get_letter(const char* prompt);
 
 void print_rules(void);
 void print_hangman(int lives);
@@ -37,10 +37,8 @@ int main(void)
 
     print_rules();
 
-    int letter;
-    bool won, lost;
-
-    won = lost = false;
+    char letter;
+    bool won = false;
     for (;;) {
         system("clear");
 
@@ -48,7 +46,7 @@ int main(void)
         print_misses(misses);
         print_unlocked_letters(unlocked_letters);
 
-        letter = get_user_guess(PROMPT);
+        letter = get_letter(PROMPT);
         if (strchr(word, letter)) {
             unlock_letter(word, unlocked_letters, letter);
             if (!strchr(unlocked_letters, LOCKED_LETTER)) {
@@ -58,28 +56,25 @@ int main(void)
         } else {
             --lives;
             append(misses, LIVES, letter);
-            if (lives == 0) {
-                lost = true;
+            if (lives == 0)
                 break;
-            }
         }
     }
 
     system("clear");
-
-    if (won)
-        printf("%s\n", "YOU WON");
-    else
-        printf("%s\n", "YOU LOST");
+    (won) ? puts("YOU WON") : puts("YOU LOST");
 
     print_hangman(lives);
     print_misses(misses);
     print_unlocked_letters(unlocked_letters);
 
+    if ((letter = tolower(get_letter("Repeat? [y/Y]: "))) == 'y')
+        main();
+
     return 0;
 }
 
-char get_user_guess(const char* prompt)
+char get_letter(const char* prompt)
 {
     int ch;
     while (printf("%s", prompt) && (ch = getchar()) != EOF) {
@@ -103,7 +98,7 @@ void print_rules(void)
     puts("I will pick a random word.");
     printf("%s %d %s\n", "You will have", LIVES,
             "attempts to guess it, otherwise you will get hanged.");
-    puts("Press any key to begin...");
+    puts("Press <Enter> to begin...");
     getchar();
 }
 
