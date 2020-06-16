@@ -12,8 +12,14 @@
 #define LIVES          6
 #define LOCKED_LETTER '_'
 #define PROMPT "GUESS: "
+#define WORDS_FILE_NAME "google-10000-english-usa.txt"
+#define WORDS_FILE_SIZE 10000
+#define MAX_WORD_SIZE 32
 
+void load_words_from_file(char dest[][MAX_WORD_SIZE], size_t size, const char* filename);
+const char* pick_random_word(const char** words);
 const char* get_random_word(void);
+
 char get_letter(const char* prompt);
 
 void print_rules(void);
@@ -28,9 +34,14 @@ void print_misses(const char* misses);
 
 int main(void)
 {
+    srand(time(NULL));
+
     int lives = LIVES;
     char misses[LIVES + 1] = {0};
-    const char* word = get_random_word();
+    char words[WORDS_FILE_SIZE][MAX_WORD_SIZE];
+
+    load_words_from_file(words, WORDS_FILE_SIZE, WORDS_FILE_NAME);
+    const char* word = words[rand() % WORDS_FILE_SIZE];
 
     char unlocked_letters[strlen(word) + 1];
     init_unlocked_letters(unlocked_letters, sizeof(unlocked_letters) - 1, LOCKED_LETTER);
@@ -64,6 +75,7 @@ int main(void)
     system("clear");
     (won) ? puts("YOU WON") : puts("YOU LOST");
 
+    printf("%s\n", word);
     print_hangman(lives);
     print_misses(misses);
     print_unlocked_letters(unlocked_letters);
@@ -102,12 +114,25 @@ void print_rules(void)
     getchar();
 }
 
-/*
- * Returns a pointer to a random word picked from 'words' array.
- */
+void load_words_from_file(char dest[][MAX_WORD_SIZE], size_t size, const char* filename)
+{
+    FILE* file;
+    if (!(file = fopen(filename, "r"))) {
+        perror("load_words_from_file");
+        exit(1);
+    }
+
+    for (int i = 0; i < size; ++i) {
+        fgets(dest[i], MAX_WORD_SIZE, file);
+        dest[i][strlen(dest[i]) - 1] = '\0';
+    }
+    fclose(file);
+}
+
 const char* get_random_word(void)
 {
     srand(time(NULL));
+
     const char* words[] = {
         "apple",
         "king",
